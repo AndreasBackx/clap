@@ -1,5 +1,8 @@
+use anyhow::Context;
+use anyhow::Result;
 use clap::FromArgMatches;
 use clap::Subcommand;
+use clap_complete::Shell;
 
 fn command() -> clap::Command {
     let cmd = clap::Command::new("dynamic")
@@ -19,16 +22,20 @@ fn command() -> clap::Command {
     clap_complete::dynamic::bash::CompleteCommand::augment_subcommands(cmd)
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cmd = command();
     let matches = cmd.get_matches();
-    if let Ok(completions) =
-        clap_complete::dynamic::bash::CompleteCommand::from_arg_matches(&matches)
-    {
-        completions.complete(&mut command());
-    } else {
-        println!("{matches:#?}");
-    }
+
+    eprintln!("{matches:#?}");
+    clap_complete::generate(
+        Shell::PowerShell,
+        &mut command(),
+        command().get_name(),
+        &mut std::io::stdout(),
+    );
+    let dynamic_completions =
+        clap_complete::dynamic::bash::CompleteCommand::from_arg_matches(&matches)?;
+    dynamic_completions.complete(&mut command());
 }
 
 #[test]

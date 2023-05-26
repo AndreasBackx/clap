@@ -64,7 +64,7 @@ pub mod bash {
 
     impl CompleteCommand {
         /// Process the completion request
-        pub fn complete(&self, cmd: &mut clap::Command) -> std::convert::Infallible {
+        pub fn complete(&self, cmd: &mut clap::Command) -> ! {
             self.try_complete(cmd).unwrap_or_else(|e| e.exit());
             std::process::exit(0)
         }

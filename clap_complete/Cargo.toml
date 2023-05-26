@@ -1,9 +1,8 @@
 [package]
-name = "clap_complete"
-version = "4.3.0"
-description = "Generate shell completion scripts for your clap::Command"
-repository = "https://github.com/clap-rs/clap/tree/master/clap_complete"
 categories = ["command-line-interface"]
+description = "Generate shell completion scripts for your clap::Command"
+edition.workspace = true
+include.workspace = true
 keywords = [
   "clap",
   "cli",
@@ -11,45 +10,47 @@ keywords = [
   "bash",
 ]
 license.workspace = true
-edition.workspace = true
+name = "clap_complete"
+repository = "https://github.com/clap-rs/clap/tree/master/clap_complete"
 rust-version.workspace = true
-include.workspace = true
+version = "4.3.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [package.metadata.release]
 pre-release-replacements = [
-  {file="CHANGELOG.md", search="Unreleased", replace="{{version}}", min=1},
-  {file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
-  {file="CHANGELOG.md", search="ReleaseDate", replace="{{date}}", min=1},
-  {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n## [Unreleased] - ReleaseDate\n", exactly=1},
-  {file="CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://github.com/clap-rs/clap/compare/{{tag_name}}...HEAD", exactly=1},
-  {file="README.md", search="github.com/clap-rs/clap/blob/[^/]+/", replace="github.com/clap-rs/clap/blob/{{tag_name}}/", exactly=4, prerelease = true},
+  {file = "CHANGELOG.md", search = "Unreleased", replace = "{{version}}", min = 1},
+  {file = "CHANGELOG.md", search = "\\.\\.\\.HEAD", replace = "...{{tag_name}}", exactly = 1},
+  {file = "CHANGELOG.md", search = "ReleaseDate", replace = "{{date}}", min = 1},
+  {file = "CHANGELOG.md", search = "<!-- next-header -->", replace = "<!-- next-header -->\n## [Unreleased] - ReleaseDate\n", exactly = 1},
+  {file = "CHANGELOG.md", search = "<!-- next-url -->", replace = "<!-- next-url -->\n[Unreleased]: https://github.com/clap-rs/clap/compare/{{tag_name}}...HEAD", exactly = 1},
+  {file = "README.md", search = "github.com/clap-rs/clap/blob/[^/]+/", replace = "github.com/clap-rs/clap/blob/{{tag_name}}/", exactly = 4, prerelease = true},
 ]
 
 [lib]
 bench = false
 
 [dependencies]
-clap = { path = "../", version = "4.1.0", default-features = false, features = ["std"] }
-clap_lex = { path = "../clap_lex", version = "0.5.0", optional = true }
-is_executable = { version = "1.0.1", optional = true }
-pathdiff = { version = "0.2.1", optional = true }
-shlex = { version = "1.1.0", optional = true }
-unicode-xid = { version = "0.2.2", optional = true }
+clap = {path = "../", version = "4.1.0", default-features = false, features = ["std"]}
+clap_lex = {path = "../clap_lex", version = "0.5.0", optional = true}
+is_executable = {version = "1.0.1", optional = true}
+pathdiff = {version = "0.2.1", optional = true}
+shlex = {version = "1.1.0", optional = true}
+unicode-xid = {version = "0.2.2", optional = true}
 
 [dev-dependencies]
-snapbox = { version = "0.4.10", features = ["diff"] }
+snapbox = {version = "0.4.10", features = ["diff"]}
 # Cutting out `filesystem` feature
-trycmd = { version = "0.14.15", default-features = false, features = ["color-auto", "diff", "examples"] }
-clap = { path = "../", version = "4.0.0", default-features = false, features = ["std", "derive", "help"] }
+clap = {path = "../", version = "4.0.0", default-features = false, features = ["std", "derive", "help"]}
+trycmd = {version = "0.14.15", default-features = false, features = ["color-auto", "diff", "examples"]}
+anyhow = "1.0.71"
 
 [[example]]
 name = "dynamic"
 required-features = ["unstable-dynamic"]
 
 [features]
+debug = ["clap/debug"]
 default = []
 unstable-dynamic = ["dep:clap_lex", "dep:shlex", "dep:unicode-xid", "clap/derive", "dep:is_executable", "dep:pathdiff"]
-debug = ["clap/debug"]
