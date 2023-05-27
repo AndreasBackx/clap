@@ -1,4 +1,3 @@
-use anyhow::Context;
 use anyhow::Result;
 use clap::FromArgMatches;
 use clap::Subcommand;
@@ -19,7 +18,7 @@ fn command() -> clap::Command {
                 .value_parser(["json", "yaml", "toml"]),
         )
         .args_conflicts_with_subcommands(true);
-    clap_complete::dynamic::bash::CompleteCommand::augment_subcommands(cmd)
+    clap_complete::dynamic::cmd::CompletionsCommand::augment_subcommands(cmd)
 }
 
 fn main() -> Result<()> {
@@ -34,8 +33,8 @@ fn main() -> Result<()> {
         &mut std::io::stdout(),
     );
     let dynamic_completions =
-        clap_complete::dynamic::bash::CompleteCommand::from_arg_matches(&matches)?;
-    dynamic_completions.complete(&mut command());
+        clap_complete::dynamic::cmd::CompletionsCommand::from_arg_matches(&matches)?;
+    dynamic_completions.run(&mut command())
 }
 
 #[test]
