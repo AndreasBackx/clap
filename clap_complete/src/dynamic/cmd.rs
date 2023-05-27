@@ -1,7 +1,7 @@
 //! Starting point command to be used for completion CLI.
 use std::io::Write;
 
-use super::bash;
+use super::{bash, zsh};
 
 #[derive(clap::Subcommand)]
 #[command(hide = true)]
@@ -30,8 +30,8 @@ pub struct GenerateArgs {
 #[allow(missing_docs)]
 #[derive(Clone, Debug)]
 pub enum GenerateShellCommands {
-    /// Generate bash completions.
     Bash(bash::BashGenerateArgs),
+    Zsh(zsh::ZshGenerateArgs),
 }
 
 #[derive(clap::Args)]
@@ -47,6 +47,7 @@ pub struct CompleteArgs {
 #[derive(Clone, Debug)]
 pub enum CompleteShellCommands {
     Bash(bash::BashCompleteArgs),
+    Zsh(zsh::ZshCompleteArgs),
 }
 
 impl CompletionsCommand {
@@ -61,9 +62,8 @@ impl CompletionsCommand {
         debug!("CompleteCommand::try_complete: {self:?}");
         match self {
             CompletionsCommand::Complete(args) => match args.command {
-                CompleteShellCommands::Bash(ref args) => {
-                    args.try_run(cmd)?;
-                }
+                CompleteShellCommands::Bash(ref args) => args.try_run(cmd),
+                CompleteShellCommands::Zsh(ref args) => args.try_run(cmd),
             },
             CompletionsCommand::Generate(args) => {
                 let mut buf = Vec::new();
@@ -81,6 +81,9 @@ impl CompletionsCommand {
                     GenerateShellCommands::Bash(ref args) => {
                         args.try_run(name, [bin], bin, &mut buf)?
                     }
+                    GenerateShellCommands::Zsh(ref args) => {
+                        args.try_run(name, [bin], bin, &mut buf)?
+                    }
                 }
 
                 if args.output == std::path::Path::new("-") {
@@ -88,8 +91,9 @@ impl CompletionsCommand {
                 } else {
                     std::fs::write(args.output.as_path(), buf)?;
                 }
+
+                Ok(())
             }
         }
-        Ok(())
     }
 }
