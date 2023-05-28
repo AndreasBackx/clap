@@ -1,3 +1,4 @@
+//! Completion
 use std::ffi::OsStr;
 use std::ffi::OsString;
 
