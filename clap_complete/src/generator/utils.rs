@@ -16,6 +16,20 @@ pub fn all_subcommands(cmd: &Command) -> Vec<(String, String)> {
     subcmds
 }
 
+/// tODO
+pub fn all_subcommands_new(cmd: &Command) -> Vec<&Command> {
+    cmd.get_subcommands()
+        .flat_map(all_subcommands_new)
+        .collect()
+    // let mut subcmds: Vec<_> = subcommands(cmd);
+
+    // for sc_v in cmd.get_subcommands().map(all_subcommands) {
+    //     subcmds.extend(sc_v);
+    // }
+
+    // subcmds
+}
+
 /// Finds the subcommand [`clap::Command`] from the given [`clap::Command`] with the given path.
 ///
 /// **NOTE:** `path` should not contain the root `bin_name`.
@@ -79,6 +93,32 @@ pub fn shorts_and_visible_aliases(p: &Command) -> Vec<char> {
         .collect()
 }
 
+/// Gets all the short options, their visible aliases and flags of a [`clap::Command`].
+/// Includes `h` and `V` depending on the [`clap::Command`] settings.
+pub fn shorts_and_visible_aliases_new<'a>(p: &'a Command) -> Vec<(&'a Arg, Vec<char>)> {
+    debug!("shorts: name={}", p.get_name());
+
+    p.get_arguments()
+        .filter_map(|a| {
+            if !a.is_positional() {
+                if let Some(short_a) = a.get_short() {
+                    let mut aliases = vec![short_a];
+                    if let Some(shorts_and_visible_aliases) = a.get_visible_short_aliases() {
+                        aliases.extend(shorts_and_visible_aliases)
+                    }
+                    Some((a, aliases))
+                    // Some(aliases.into_iter().map(|alias| (a, alias)))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
+        // .flatten()
+        .collect()
+}
+
 /// Gets all the long options, their visible aliases and flags of a [`clap::Command`].
 /// Includes `help` and `version` depending on the [`clap::Command`] settings.
 pub fn longs_and_visible_aliases(p: &Command) -> Vec<String> {
@@ -106,6 +146,29 @@ pub fn longs_and_visible_aliases(p: &Command) -> Vec<String> {
             }
         })
         .flatten()
+        .collect()
+}
+
+/// TODO Improve this
+pub fn longs_and_visible_aliases_new<'a>(p: &'a Command) -> Vec<(&'a Arg, Vec<String>)> {
+    debug!("longs: name={}", p.get_name());
+
+    p.get_arguments()
+        .filter_map(|a| {
+            if !a.is_positional() {
+                if let Some(long_a) = a.get_long() {
+                    let mut aliases = vec![long_a.to_string()];
+                    if let Some(visible_aliases) = a.get_visible_aliases() {
+                        aliases.extend(visible_aliases.into_iter().map(|s| s.to_string()))
+                    }
+                    Some((a, aliases))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        })
         .collect()
 }
 

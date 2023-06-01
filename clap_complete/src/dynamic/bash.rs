@@ -58,7 +58,7 @@ impl BashCompleteArgs {
             if i != 0 {
                 write!(&mut buf, "{}", self.ifs.as_deref().unwrap_or("\n"))?;
             }
-            write!(&mut buf, "{}", completion.to_string_lossy())?;
+            write!(&mut buf, "{}", completion.get_value().to_string_lossy())?;
         }
         std::io::stdout().write_all(&buf)?;
 

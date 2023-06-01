@@ -4,11 +4,13 @@ use std::io::Write;
 
 use unicode_xid::UnicodeXID;
 
+use super::completion;
+
 #[derive(clap::Args)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug)]
 pub struct ZshCompleteArgs {
-    #[arg(long, required = true, value_name = "CURRENT", hide_short_help = true)]
+    #[arg(long, value_name = "CURRENT", hide_short_help = true)]
     index: Option<usize>,
 
     #[arg(raw = true, hide_short_help = true)]
@@ -24,19 +26,22 @@ pub struct ZshCompleteArgs {
 
 impl ZshCompleteArgs {
     /// Process the completion request
-    pub fn try_run(&self, _cmd: &mut clap::Command) -> clap::error::Result<()> {
-        // let index = self.index.unwrap_or_default();
-        // let current_dir = std::env::current_dir().ok();
-        // let completions =
-        //     completion::complete(cmd, self.words.clone(), index, current_dir.as_deref())?;
-        let completions: Vec<OsString> = vec!["a".into(), "b".into()];
+    pub fn try_run(&self, cmd: &mut clap::Command) -> clap::error::Result<()> {
+        let index = self
+            .index
+            .or_else(|| self.words.last().map(|word| word.len()))
+            .unwrap_or_default();
+        let current_dir = std::env::current_dir().ok();
+        let completions =
+            completion::complete(cmd, self.words.clone(), index, current_dir.as_deref())?;
+        // let completions: Vec<OsString> = vec!["a".into(), "b".into()];
 
         let mut buf = Vec::new();
         for (_i, completion) in completions.iter().enumerate() {
             // if i != 0 {
             //     write!(&mut buf, "{}", self.ifs.as_deref().unwrap_or("\n"))?;
             // }
-            write!(&mut buf, "{} ", completion.to_string_lossy())?;
+            write!(&mut buf, "{}", completion.get_value().to_string_lossy())?;
         }
         std::io::stdout().write_all(&buf)?;
 

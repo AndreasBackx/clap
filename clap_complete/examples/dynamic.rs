@@ -5,19 +5,20 @@ use clap::Subcommand;
 fn command() -> clap::Command {
     let cmd = clap::Command::new("dynamic")
         .bin_name("dynamic")
-        .arg(
-            clap::Arg::new("input")
-                .long("input")
-                .short('i')
-                .value_hint(clap::ValueHint::FilePath),
-        )
-        .arg(
-            clap::Arg::new("format")
-                .long("format")
-                .short('F')
-                .value_parser(["json", "yaml", "toml"]),
-        )
-        .args_conflicts_with_subcommands(true);
+        .subcommand(clap::Command::new("parent").subcommand(clap::Command::new("child")));
+    // .arg(
+    //     clap::Arg::new("input")
+    //         .long("input")
+    //         .short('i')
+    //         .value_hint(clap::ValueHint::FilePath),
+    // )
+    // .arg(
+    //     clap::Arg::new("format")
+    //         .long("format")
+    //         .short('F')
+    //         .value_parser(["json", "yaml", "toml"]),
+    // )
+    // .args_conflicts_with_subcommands(true);
     clap_complete::dynamic::cmd::CompletionsCommand::augment_subcommands(cmd)
 }
 

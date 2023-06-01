@@ -1,10 +1,13 @@
 #![cfg(feature = "unstable-dynamic")]
 
+use clap_complete::dynamic::completion::Completion;
+
 #[test]
 fn suggest_subcommand_subset() {
     let name = "test";
+    let hello_world_about = "Hello world!";
     let mut cmd = clap::Command::new(name)
-        .subcommand(clap::Command::new("hello-world"))
+        .subcommand(clap::Command::new("hello-world").about(hello_world_about))
         .subcommand(clap::Command::new("hello-moon"))
         .subcommand(clap::Command::new("goodbye-world"));
 
@@ -13,25 +16,21 @@ fn suggest_subcommand_subset() {
     let args = IntoIterator::into_iter(args)
         .map(std::ffi::OsString::from)
         .collect::<Vec<_>>();
-    let comp_type = clap_complete::dynamic::bash::CompType::default();
-    let trailing_space = true;
     let current_dir = None;
 
-    let completions = clap_complete::dynamic::bash::complete(
-        &mut cmd,
-        args,
-        arg_index,
-        comp_type,
-        trailing_space,
-        current_dir,
-    )
-    .unwrap();
-    let completions = completions
-        .into_iter()
-        .map(|s| s.to_string_lossy().into_owned())
-        .collect::<Vec<_>>();
+    let completions =
+        clap_complete::dynamic::completion::complete(&mut cmd, args, arg_index, current_dir)
+            .unwrap();
 
-    assert_eq!(completions, ["hello-moon", "hello-world", "help"]);
+    assert_eq!(
+        completions,
+        vec![
+            Completion::new("hello-moon".into()),
+            Completion::new("hello-world".into()).help(hello_world_about.into()),
+            Completion::new("help".into())
+                .help("Print this message or the help of the given subcommand(s)".into()),
+        ],
+    );
 }
 
 #[test]
@@ -59,25 +58,20 @@ fn suggest_long_flag_subset() {
     let args = IntoIterator::into_iter(args)
         .map(std::ffi::OsString::from)
         .collect::<Vec<_>>();
-    let comp_type = clap_complete::dynamic::bash::CompType::default();
-    let trailing_space = true;
     let current_dir = None;
 
-    let completions = clap_complete::dynamic::bash::complete(
-        &mut cmd,
-        args,
-        arg_index,
-        comp_type,
-        trailing_space,
-        current_dir,
-    )
-    .unwrap();
-    let completions = completions
-        .into_iter()
-        .map(|s| s.to_string_lossy().into_owned())
-        .collect::<Vec<_>>();
+    let completions =
+        clap_complete::dynamic::completion::complete(&mut cmd, args, arg_index, current_dir)
+            .unwrap();
 
-    assert_eq!(completions, ["--hello-world", "--hello-moon", "--help"]);
+    assert_eq!(
+        completions,
+        vec![
+            Completion::new("--hello-world".into()),
+            Completion::new("--hello-moon".into()),
+            Completion::new("--help".into()).help("Print help".into())
+        ],
+    );
 }
 
 #[test]
@@ -94,25 +88,19 @@ fn suggest_possible_value_subset() {
     let args = IntoIterator::into_iter(args)
         .map(std::ffi::OsString::from)
         .collect::<Vec<_>>();
-    let comp_type = clap_complete::dynamic::bash::CompType::default();
-    let trailing_space = true;
     let current_dir = None;
 
-    let completions = clap_complete::dynamic::bash::complete(
-        &mut cmd,
-        args,
-        arg_index,
-        comp_type,
-        trailing_space,
-        current_dir,
-    )
-    .unwrap();
-    let completions = completions
-        .into_iter()
-        .map(|s| s.to_string_lossy().into_owned())
-        .collect::<Vec<_>>();
+    let completions =
+        clap_complete::dynamic::completion::complete(&mut cmd, args, arg_index, current_dir)
+            .unwrap();
 
-    assert_eq!(completions, ["hello-world", "hello-moon"]);
+    assert_eq!(
+        completions,
+        vec![
+            Completion::new("hello-world".into()),
+            Completion::new("hello-moon".into()),
+        ],
+    );
 }
 
 #[test]
@@ -140,23 +128,19 @@ fn suggest_additional_short_flags() {
     let args = IntoIterator::into_iter(args)
         .map(std::ffi::OsString::from)
         .collect::<Vec<_>>();
-    let comp_type = clap_complete::dynamic::bash::CompType::default();
-    let trailing_space = true;
     let current_dir = None;
 
-    let completions = clap_complete::dynamic::bash::complete(
-        &mut cmd,
-        args,
-        arg_index,
-        comp_type,
-        trailing_space,
-        current_dir,
-    )
-    .unwrap();
-    let completions = completions
-        .into_iter()
-        .map(|s| s.to_string_lossy().into_owned())
-        .collect::<Vec<_>>();
+    let completions =
+        clap_complete::dynamic::completion::complete(&mut cmd, args, arg_index, current_dir)
+            .unwrap();
 
-    assert_eq!(completions, ["-aa", "-ab", "-ac", "-ah"]);
+    assert_eq!(
+        completions,
+        vec![
+            Completion::new("-aa".into()),
+            Completion::new("-ab".into()),
+            Completion::new("-ac".into()),
+            Completion::new("-ah".into()).help("Print help".into()),
+        ],
+    );
 }

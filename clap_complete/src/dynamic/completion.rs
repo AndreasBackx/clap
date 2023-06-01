@@ -3,6 +3,144 @@ use std::ffi::OsStr;
 use std::ffi::OsString;
 
 use clap_lex::OsStrExt as _;
+use clap_lex::ParsedArg;
+
+/// General representation for a completion in various shells.
+/// This includes the necessary information to build how a completion looks
+/// for each specific shell.
+#[derive(Debug, Clone, PartialOrd, Eq, Ord, Default)]
+pub struct Completion {
+    /// When selected, the value that will be autocompleted in its entirity.
+    value: OsString,
+    /// What to show in autocomplete instead of the value.
+    /// Useful when the value benefits a more user-friendly version.
+    display: Option<OsString>,
+    /// Additional help information about the completion that can be shown
+    /// alongside the completion.
+    help: Option<OsString>,
+}
+
+impl Completion {
+    /// Create a new completion with the given value as the value to be completed.
+    pub fn new(value: OsString) -> Self {
+        Completion {
+            value,
+            ..Default::default()
+        }
+    }
+
+    /// Set [`Completion::display`].
+    pub fn display(mut self, display: OsString) -> Self {
+        self.display = Some(display);
+        self
+    }
+
+    /// Set [`Completion::help`].
+    pub fn help(mut self, help: OsString) -> Self {
+        self.help = Some(help);
+        self
+    }
+
+    /// Get [`Completion::value`].
+    pub fn get_value(&self) -> &OsString {
+        return &self.value;
+    }
+
+    /// Get [`Completion::display`].
+    pub fn get_display(&self) -> &OsString {
+        return self.display.as_ref().unwrap_or_else(|| self.get_value());
+    }
+
+    /// Get [`Completion::help`].
+    pub fn get_help(&self) -> &Option<OsString> {
+        return &self.help;
+    }
+
+    fn arg(arg: &clap::Arg) -> Self {
+        Completion {
+            help: arg.get_help().map(|help| help.to_string().into()),
+            ..Default::default()
+        }
+    }
+
+    /// Create completion for argument with specific value.
+    pub fn arg_value(arg: &clap::Arg, value: OsString) -> Self {
+        Completion {
+            value: value,
+            ..Completion::arg(arg)
+        }
+    }
+
+    /// Create completion for a long flag: --flag.
+    pub fn long_flag(arg: &clap::Arg, alias: String) -> Self {
+        Completion {
+            value: format!("--{alias}").into(),
+            ..Completion::arg(arg)
+        }
+    }
+
+    /// Create completion for short flag
+    /// TODO Check why this is the same as long.
+    pub fn short_flag(arg: &clap::Arg, alias: String) -> Self {
+        Completion {
+            value: format!("--{alias}").into(),
+            ..Completion::arg(arg)
+        }
+    }
+
+    /// Create completion when short flags have already been entered but more
+    /// can be added. For example `-a` is passed already as a short flag,
+    /// then suggest `=ah` that adds the `h` for help.
+    pub fn additional_short_flag(
+        existing_arg: &ParsedArg,
+        new_arg: &clap::Arg,
+        new_alias: char,
+    ) -> Self {
+        Completion {
+            // HACK: Need better `OsStr` manipulation
+            value: format!(
+                "{}{new_alias}",
+                existing_arg.to_value_os().to_string_lossy()
+            )
+            .into(),
+            ..Completion::arg(new_arg)
+        }
+    }
+
+    /// Create completion for a particular positional.
+    pub fn positional(arg: &clap::Arg, value: OsString) -> Self {
+        Completion {
+            value,
+            ..Completion::arg(arg)
+        }
+    }
+}
+
+impl PartialEq for Completion {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value && self.display == other.display && self.help == other.help
+    }
+}
+
+/// List of completions to be grouped together. For example subcomands may be
+/// shown separately from options or flags.
+pub struct CompletionGroup {
+    /// The name to show above the completion group.
+    /// Supported shells: zsh.
+    pub name: Option<OsString>,
+    /// List of completions for this group.
+    pub completions: Vec<Completion>,
+}
+
+impl Into<Completion> for &clap::Command {
+    fn into(self) -> Completion {
+        Completion {
+            value: self.get_name().into(),
+            help: self.get_about().map(|about| about.to_string().into()),
+            ..Default::default()
+        }
+    }
+}
 
 /// Complete the command specified
 pub fn complete(
@@ -10,7 +148,7 @@ pub fn complete(
     args: Vec<std::ffi::OsString>,
     arg_index: usize,
     current_dir: Option<&std::path::Path>,
-) -> Result<Vec<std::ffi::OsString>, std::io::Error> {
+) -> Result<Vec<Completion>, std::io::Error> {
     cmd.build();
 
     debug!("args: {args:?}");
@@ -76,7 +214,7 @@ fn complete_arg(
     current_dir: Option<&std::path::Path>,
     pos_index: usize,
     is_escaped: bool,
-) -> Result<Vec<std::ffi::OsString>, std::io::Error> {
+) -> Result<Vec<Completion>, std::io::Error> {
     debug!(
         "complete_arg: arg={:?}, cmd={:?}, current_dir={:?}, pos_index={}, is_escaped={}",
         arg,
@@ -97,34 +235,50 @@ fn complete_arg(
                                 .into_iter()
                                 .map(|os| {
                                     // HACK: Need better `OsStr` manipulation
-                                    format!("--{}={}", flag, os.to_string_lossy()).into()
+                                    Completion::arg_value(
+                                        arg,
+                                        format!("--{}={}", flag, os.to_string_lossy()).into(),
+                                    )
                                 }),
                         )
                     }
                 } else {
                     completions.extend(
-                        crate::generator::utils::longs_and_visible_aliases(cmd)
+                        crate::generator::utils::longs_and_visible_aliases_new(cmd)
                             .into_iter()
-                            .filter_map(|f| f.starts_with(flag).then(|| format!("--{f}").into())),
+                            .flat_map(|(arg, aliases)| {
+                                aliases
+                                    .into_iter()
+                                    .filter(|alias| alias.starts_with(flag))
+                                    .map(move |alias| Completion::long_flag(&arg, alias))
+                            }),
                     );
                 }
             }
         } else if arg.is_escape() || arg.is_stdio() || arg.is_empty() {
             // HACK: Assuming knowledge of is_escape / is_stdio
             completions.extend(
-                crate::generator::utils::longs_and_visible_aliases(cmd)
+                crate::generator::utils::longs_and_visible_aliases_new(cmd)
                     .into_iter()
-                    .map(|f| format!("--{f}").into()),
+                    .flat_map(|(arg, aliases)| {
+                        aliases
+                            .into_iter()
+                            .map(|alias| Completion::long_flag(arg, alias))
+                    }),
             );
         }
 
         if arg.is_empty() || arg.is_stdio() || arg.is_short() {
             // HACK: Assuming knowledge of is_stdio
             completions.extend(
-                crate::generator::utils::shorts_and_visible_aliases(cmd)
+                crate::generator::utils::shorts_and_visible_aliases_new(cmd)
                     .into_iter()
                     // HACK: Need better `OsStr` manipulation
-                    .map(|f| format!("{}{}", arg.to_value_os().to_string_lossy(), f).into()),
+                    .flat_map(|(new_arg, new_aliases)| {
+                        new_aliases.into_iter().map(|new_alias| {
+                            Completion::additional_short_flag(arg, new_arg, new_alias)
+                        })
+                    }),
             );
         }
     }
@@ -133,7 +287,14 @@ fn complete_arg(
         .get_positionals()
         .find(|p| p.get_index() == Some(pos_index))
     {
-        completions.extend(complete_arg_value(arg.to_value(), positional, current_dir));
+        completions.extend(
+            complete_arg_value(arg.to_value(), positional, current_dir)
+                .into_iter()
+                // TODO We're currently not giving any information about this
+                // completion, though we should probably group it and give
+                // some help information in the group?
+                .map(|os| Completion::positional(positional, os)),
+        );
     }
 
     if let Ok(value) = arg.to_value() {
@@ -249,17 +410,20 @@ fn complete_path(
     completions
 }
 
-fn complete_subcommand(value: &str, cmd: &clap::Command) -> Vec<OsString> {
+fn complete_subcommand(value: &str, cmd: &clap::Command) -> Vec<Completion> {
     debug!(
         "complete_subcommand: cmd={:?}, value={:?}",
         cmd.get_name(),
         value
     );
 
-    let mut scs = crate::generator::utils::all_subcommands(cmd)
+    // TODO In order to give help information about subcommands, all_subcommands
+    // needs to return a Command type instead of just a string.
+    let mut scs = cmd
+        .get_subcommands()
         .into_iter()
-        .filter(|x| x.0.starts_with(value))
-        .map(|x| OsString::from(&x.0))
+        .filter(|cmd| cmd.get_name().starts_with(value))
+        .map(|cmd| cmd.into())
         .collect::<Vec<_>>();
     scs.sort();
     scs.dedup();
