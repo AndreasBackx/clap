@@ -6,6 +6,8 @@ use unicode_xid::UnicodeXID;
 
 use super::completion;
 
+/// # Something
+/// Something
 #[derive(clap::Args)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug)]
@@ -27,13 +29,26 @@ pub struct ZshCompleteArgs {
 impl ZshCompleteArgs {
     /// Process the completion request
     pub fn try_run(&self, cmd: &mut clap::Command) -> clap::error::Result<()> {
-        let index = self
-            .index
-            .or_else(|| self.words.last().map(|word| word.len()))
-            .unwrap_or_default();
         let current_dir = std::env::current_dir().ok();
         let completions =
-            completion::complete(cmd, self.words.clone(), index, current_dir.as_deref())?;
+            completion::complete(cmd, self.words.clone(), self.index, current_dir.as_deref())?;
+
+        let (mut descriptions, mut values): (Vec<&OsString>, Vec<&OsString>) = completions
+            .into_iter()
+            .fold((vec![], vec![]), |(mut descs, mut vals), comp| {
+                descs.push(format!("\""));
+                vals.push(comp.get_value());
+
+                (descs, vals)
+            });
+
+        let group_script = format!(
+            r#"
+        descriptions=({})
+        compadd -ld descriptions {} -- {}
+    "#,
+            descriptions, group_args, values,
+        );
         // let completions: Vec<OsString> = vec!["a".into(), "b".into()];
 
         let mut buf = Vec::new();

@@ -1,6 +1,6 @@
 #![cfg(feature = "unstable-dynamic")]
 
-use clap_complete::dynamic::completion::Completion;
+use clap_complete::dynamic::completion::{complete, Completion};
 
 #[test]
 fn suggest_subcommand_subset() {
@@ -31,6 +31,34 @@ fn suggest_subcommand_subset() {
                 .help("Print this message or the help of the given subcommand(s)".into()),
         ],
     );
+}
+
+#[test]
+fn suggest_nested_subcommand_subset() {
+    let name = "test";
+    let hello_world_about = "Hello world!";
+    let mut cmd = clap::Command::new(name).subcommand(
+        clap::Command::new("hello")
+            .about(hello_world_about)
+            .subcommand(clap::Command::new("world"))
+            .subcommand(clap::Command::new("person")),
+    );
+    let args = [name, "hello", "w"];
+    assert_completions_eq(&mut cmd, args, vec![Completion::new("world".into())]);
+}
+
+fn assert_completions_eq(
+    cmd: &mut clap::Command,
+    args: Vec<&str>,
+    expected_completions: Vec<Completion>,
+) {
+    let args = IntoIterator::into_iter(args)
+        .map(std::ffi::OsString::from)
+        .collect::<Vec<_>>();
+
+    let completions = complete(cmd, args, None, None).unwrap();
+
+    assert_eq!(completions, expected_completions);
 }
 
 #[test]

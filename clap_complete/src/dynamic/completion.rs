@@ -146,9 +146,10 @@ impl Into<Completion> for &clap::Command {
 pub fn complete(
     cmd: &mut clap::Command,
     args: Vec<std::ffi::OsString>,
-    arg_index: usize,
+    arg_index: Option<usize>,
     current_dir: Option<&std::path::Path>,
 ) -> Result<Vec<Completion>, std::io::Error> {
+    let arg_index = arg_index.unwrap_or_else(|| args.len() - 1);
     cmd.build();
 
     debug!("args: {args:?}");
@@ -158,10 +159,16 @@ pub fn complete(
     let raw_args = clap_lex::RawArgs::new(args.into_iter());
     let mut cursor = raw_args.cursor();
     let mut target_cursor = raw_args.cursor();
+
+    debug!("starting cursor: {cursor:?}");
+    debug!("starting target_cursor: {target_cursor:?}");
+
     raw_args.seek(
         &mut target_cursor,
         clap_lex::SeekFrom::Start(arg_index as u64),
     );
+
+    debug!("target_cursor: {target_cursor:?}");
     // As we loop, `cursor` will always be pointing to the next item
     raw_args.next_os(&mut target_cursor);
 
@@ -181,10 +188,16 @@ pub fn complete(
             return complete_arg(&arg, current_cmd, current_dir, pos_index, is_escaped);
         }
 
+        debug!("cursor {cursor:?} != target_cursor {target_cursor:?}");
         debug!("complete::next: Begin parsing '{:?}'", arg.to_value_os(),);
 
         if let Ok(value) = arg.to_value() {
             if let Some(next_cmd) = current_cmd.find_subcommand(value) {
+                debug!(
+                    "subcommand found current_cmd={}, next_cmd={}",
+                    current_cmd.get_name(),
+                    next_cmd.get_name()
+                );
                 current_cmd = next_cmd;
                 pos_index = 0;
                 continue;
