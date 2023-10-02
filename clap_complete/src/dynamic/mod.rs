@@ -2,8 +2,9 @@
 //!
 //! For quick-start, see [`shells::CompleteCommand`]
 
-mod completer;
+mod complete;
+mod registrar;
 
 pub mod shells;
 
-pub use completer::*;
+pub use registrar::*;
