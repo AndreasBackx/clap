@@ -1,4 +1,4 @@
-mod common;
+use crate::common;
 
 #[test]
 fn basic() {
@@ -96,21 +96,23 @@ fn value_terminator() {
     );
 }
 
-// #[cfg(feature = "unstable-dynamic")]
-// #[test]
-// fn register_minimal() {
-//     let name = "my-app";
-//     let executables = [name];
-//     let completer = name;
-//     let behavior = clap_complete::dynamic::bash::Behavior::Minimal;
+#[cfg(feature = "unstable-dynamic")]
+#[test]
+fn register_minimal() {
+    use clap_complete::dynamic::Completer;
 
-//     let mut buf = Vec::new();
-//     clap_complete::dynamic::bash::register(name, executables, completer, &behavior, &mut buf)
-//         .unwrap();
-//     snapbox::Assert::new()
-//         .action_env("SNAPSHOTS")
-//         .matches_path("tests/snapshots/register_minimal.bash", buf);
-// }
+    let name = "my-app";
+    let bin = name;
+    let completer = name;
+
+    let mut buf = Vec::new();
+    clap_complete::dynamic::shells::Bash
+        .write_registration(name, bin, completer, &mut buf)
+        .unwrap();
+    snapbox::Assert::new()
+        .action_env("SNAPSHOTS")
+        .matches_path("tests/snapshots/register_minimal.bash", buf);
+}
 
 #[test]
 fn two_multi_valued_arguments() {
@@ -134,4 +136,34 @@ fn subcommand_last() {
         cmd,
         name,
     );
+}
+
+#[test]
+#[cfg(unix)]
+fn register_completion() {
+    common::register_example("static", "exhaustive", completest::Shell::Bash);
+}
+
+#[test]
+#[cfg(unix)]
+fn complete() {
+    if !common::has_command("bash") {
+        return;
+    }
+
+    let term = completest::Term::new();
+    let mut runtime = common::load_runtime("static", "exhaustive", completest::Shell::Bash);
+
+    let input = "exhaustive \t\t";
+    let expected = r#"%
+-h          --global    --help      action      value       last        hint        help
+-V          --generate  --version   quote       pacman      alias       complete"#;
+    let actual = runtime.complete(input, &term).unwrap();
+    snapbox::assert_eq(expected, actual);
+}
+
+#[test]
+#[cfg(unix)]
+fn register_dynamic_completion() {
+    common::register_example("dynamic", "exhaustive", completest::Shell::Bash);
 }

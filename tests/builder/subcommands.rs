@@ -5,15 +5,15 @@ use super::utils;
 #[test]
 fn subcommand() {
     let m = Command::new("test")
-        .subcommand(
-            Command::new("some").arg(
+        .subcommand(Command::new("some").defer(|cmd| {
+            cmd.arg(
                 Arg::new("test")
                     .short('t')
                     .long("test")
                     .action(ArgAction::Set)
                     .help("testing testing"),
-            ),
-        )
+            )
+        }))
         .arg(Arg::new("other").long("other"))
         .try_get_matches_from(vec!["myprog", "some", "--test", "testing"])
         .unwrap();
@@ -30,15 +30,15 @@ fn subcommand() {
 #[test]
 fn subcommand_none_given() {
     let m = Command::new("test")
-        .subcommand(
-            Command::new("some").arg(
+        .subcommand(Command::new("some").defer(|cmd| {
+            cmd.arg(
                 Arg::new("test")
                     .short('t')
                     .long("test")
                     .action(ArgAction::Set)
                     .help("testing testing"),
-            ),
-        )
+            )
+        }))
         .arg(Arg::new("other").long("other"))
         .try_get_matches_from(vec![""])
         .unwrap();
@@ -50,14 +50,16 @@ fn subcommand_none_given() {
 fn subcommand_multiple() {
     let m = Command::new("test")
         .subcommands(vec![
-            Command::new("some").arg(
-                Arg::new("test")
-                    .short('t')
-                    .long("test")
-                    .action(ArgAction::Set)
-                    .help("testing testing"),
-            ),
-            Command::new("add").arg(Arg::new("roster").short('r')),
+            Command::new("some").defer(|cmd| {
+                cmd.arg(
+                    Arg::new("test")
+                        .short('t')
+                        .long("test")
+                        .action(ArgAction::Set)
+                        .help("testing testing"),
+                )
+            }),
+            Command::new("add").defer(|cmd| cmd.arg(Arg::new("roster").short('r'))),
         ])
         .arg(Arg::new("other").long("other"))
         .try_get_matches_from(vec!["myprog", "some", "--test", "testing"])
@@ -101,7 +103,6 @@ fn subcmd_did_you_mean_output() {
 error: unrecognized subcommand 'subcm'
 
   tip: a similar subcommand exists: 'subcmd'
-  tip: to pass 'subcm' as a value, use 'dym -- subcm'
 
 Usage: dym [COMMAND]
 
@@ -121,7 +122,6 @@ fn subcmd_did_you_mean_output_ambiguous() {
 error: unrecognized subcommand 'te'
 
   tip: some similar subcommands exist: 'test', 'temp'
-  tip: to pass 'te' as a value, use 'dym -- te'
 
 Usage: dym [COMMAND]
 
@@ -148,8 +148,9 @@ Usage: dym [COMMAND]
 For more information, try '--help'.
 ";
 
-    let cmd = Command::new("dym")
-        .subcommand(Command::new("subcmd").arg(arg!(-s --subcmdarg <subcmdarg> "tests")));
+    let cmd = Command::new("dym").subcommand(
+        Command::new("subcmd").defer(|cmd| cmd.arg(arg!(-s --subcmdarg <subcmdarg> "tests"))),
+    );
 
     utils::assert_output(cmd, "dym --subcmarg subcmd", EXPECTED, true);
 }
@@ -166,8 +167,9 @@ Usage: dym [COMMAND]
 For more information, try '--help'.
 ";
 
-    let cmd = Command::new("dym")
-        .subcommand(Command::new("subcmd").arg(arg!(-s --subcmdarg <subcmdarg> "tests")));
+    let cmd = Command::new("dym").subcommand(
+        Command::new("subcmd").defer(|cmd| cmd.arg(arg!(-s --subcmdarg <subcmdarg> "tests"))),
+    );
 
     utils::assert_output(cmd, "dym --subcmarg foo", EXPECTED, true);
 }
@@ -427,7 +429,7 @@ fn busybox_like_multicall() {
     }
     let cmd = Command::new("busybox")
         .multicall(true)
-        .subcommand(Command::new("busybox").subcommands(applet_commands()))
+        .subcommand(Command::new("busybox").defer(|cmd| cmd.subcommands(applet_commands())))
         .subcommands(applet_commands());
 
     let m = cmd
@@ -500,7 +502,6 @@ For more information, try 'help'.
 error: unrecognized subcommand 'baz'
 
   tip: a similar subcommand exists: 'bar'
-  tip: to pass 'baz' as a value, use ' -- baz'
 
 Usage: <COMMAND>
 
@@ -553,7 +554,9 @@ Options:
         .version("1.0.0")
         .propagate_version(true)
         .multicall(true)
-        .subcommand(Command::new("foo").subcommand(Command::new("bar").arg(Arg::new("value"))));
+        .subcommand(Command::new("foo").defer(|cmd| {
+            cmd.subcommand(Command::new("bar").defer(|cmd| cmd.arg(Arg::new("value"))))
+        }));
     utils::assert_output(cmd, "foo bar --help", EXPECTED, false);
 }
 
@@ -573,7 +576,10 @@ Options:
         .version("1.0.0")
         .propagate_version(true)
         .multicall(true)
-        .subcommand(Command::new("foo").subcommand(Command::new("bar").arg(Arg::new("value"))));
+        .subcommand(
+            Command::new("foo")
+                .defer(|cmd| cmd.subcommand(Command::new("bar").arg(Arg::new("value")))),
+        );
     utils::assert_output(cmd, "help foo bar", EXPECTED, false);
 }
 
@@ -593,7 +599,10 @@ Options:
         .version("1.0.0")
         .propagate_version(true)
         .multicall(true)
-        .subcommand(Command::new("foo").subcommand(Command::new("bar").arg(Arg::new("value"))));
+        .subcommand(
+            Command::new("foo")
+                .defer(|cmd| cmd.subcommand(Command::new("bar").arg(Arg::new("value")))),
+        );
     cmd.build();
     let subcmd = cmd.find_subcommand_mut("foo").unwrap();
     let subcmd = subcmd.find_subcommand_mut("bar").unwrap();

@@ -1376,6 +1376,32 @@ fn multiple_value_terminator_option_other_arg() {
 }
 
 #[test]
+fn all_multiple_value_terminator() {
+    let m = Command::new("lip")
+        .arg(
+            Arg::new("files")
+                .value_terminator(";")
+                .action(ArgAction::Set)
+                .num_args(0..),
+        )
+        .arg(Arg::new("other").num_args(0..))
+        .try_get_matches_from(vec!["test", "value", ";"]);
+
+    assert!(m.is_ok(), "{:?}", m.unwrap_err().kind());
+    let m = m.unwrap();
+
+    assert!(m.contains_id("files"));
+    assert!(!m.contains_id("other"));
+    assert_eq!(
+        m.get_many::<String>("files")
+            .unwrap()
+            .map(|v| v.as_str())
+            .collect::<Vec<_>>(),
+        ["value".to_owned()],
+    );
+}
+
+#[test]
 fn multiple_vals_with_hyphen() {
     let res = Command::new("do")
         .arg(
@@ -1704,7 +1730,7 @@ fn issue_2229() {
 }
 
 #[test]
-#[should_panic = "Argument 'pos` is positional, it must take a value"]
+#[should_panic = "Argument 'pos` is positional and it must take a value but action is SetTrue"]
 fn disallow_positionals_without_values() {
     let cmd = Command::new("test").arg(Arg::new("pos").num_args(0));
     cmd.debug_assert();

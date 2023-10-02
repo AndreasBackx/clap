@@ -73,6 +73,8 @@ jobs:
     - name: Test (ultra-minimal)
       if: matrix.build == 'minimal'
       run: make test-minimal ARGS='--manifest-path Cargo.toml'
+    - name: Test dynamic completions
+      run: cargo test -p clap_complete -F unstable-dynamic
   check:
     name: Check
     runs-on: ubuntu-latest
@@ -82,7 +84,7 @@ jobs:
         build: [msrv, wasm, wasm-wasi, debug, release]
         include:
           - build: msrv
-            rust: 1.64.0  # MSRV
+            rust: 1.70.0  # MSRV
             target: x86_64-unknown-linux-gnu
             features: full
           - build: wasm
@@ -127,10 +129,22 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.64.0  # MSRV
+        toolchain: 1.70.0  # MSRV
     - uses: Swatinem/rust-cache@v2
     - name: UI Tests
       run: make test-ui-${{ matrix.features }}
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    - uses: Swatinem/rust-cache@v2
+    - name: "Is lockfile updated?"
+      run: cargo fetch --locked
   docs:
     name: Docs
     runs-on: ubuntu-latest
@@ -140,7 +154,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.64.0  # MSRV
+        toolchain: 1.70.0  # MSRV
     - uses: Swatinem/rust-cache@v2
     - name: Check documentation
       env:
@@ -171,7 +185,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: 1.64.0  # MSRV
+        toolchain: 1.70.0  # MSRV
         components: clippy
     - uses: Swatinem/rust-cache@v2
     - name: Lint (ultra-minimal)

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Breaking Changes
 
 - Made `ArgPredicate` `non_exhaustive`
+- *(help)* Change default `Command::term_width` to "source format"
+- *(help)* Change default `Command::max_term_width` to 100
 - *(derive)* `Vec<Vec<T>>` types are now assuming to capture occurrences
 
 ### Features
@@ -17,6 +19,197 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+
+## [4.4.5] - 2023-09-25
+
+### Fixes
+
+- *(parser)* When inferring subcommand `name` or `long_flag`, allow ambiguous-looking matches that unambiguously map back to the same command
+- *(parser)* When inferring subcommand `long_flag`, don't panic
+- *(assert)* Clarify what action is causing a positional that doesn't set values which is especially useful for derive users
+
+## [4.4.4] - 2023-09-18
+
+### Internal
+
+- Update `terminal_size` to 0.3
+
+## [4.4.3] - 2023-09-12
+
+### Documentation
+
+- *(derive)* Clarify use of attributes within the tutorial
+- Split sections in the builder and derive tutorials into separate modules
+
+## [4.4.2] - 2023-08-31
+
+### Performance
+
+- Improve build times by removing `once_cell` dependency
+
+## [4.4.1] - 2023-08-28
+
+### Features
+
+- Stabilize `Command::styles`
+
+## [4.4.0] - 2023-08-24
+
+### Compatibility
+
+- Update MSRV to 1.70.0
+
+## [4.3.24] - 2023-08-23
+
+### Fixes
+
+- Ensure column padding is preserved in `--help` with custom templates
+
+## [4.3.23] - 2023-08-18
+
+### Fixes
+
+- Fixed `UnknownArgumentValueParser` to not error on flag's absence
+
+## [4.3.22] - 2023-08-17
+
+### Features
+
+- Add `UnknownArgumentValueParser` for injecting errors for improving the experience with errors
+
+## [4.3.21] - 2023-08-08
+
+### Features
+
+- Expose `TryMapValueParser` so the type can be named
+
+## [4.3.20] - 2023-08-08
+
+### Features
+
+- `Command::mut_args` for modifying all arguments en masse
+
+## [4.3.19] - 2023-07-21
+
+### Fixes
+
+- *(parse)* Respect `value_terminator` even in the presence of later multiple-value positional arguments
+
+## [4.3.18] - 2023-07-21
+
+### Fixes
+
+- *(parse)* Suggest `--` in fewer places where it won't work
+
+## [4.3.17] - 2023-07-19
+
+### Fixes
+
+- *(help)* Address a regression in wrapping `PossibleValue` descriptions in `--help`
+
+## [4.3.16] - 2023-07-18
+
+### Fixes
+
+- Don't assert when stateful value parsers fail on defaults (e.g. checking if a path exists)
+
+## [4.3.15] - 2023-07-18
+
+### Features
+
+- *(unstable-styles)* Re-export `anstyle`
+
+### Documentation
+
+- *(unstable-styles)* Provide more examples
+
+## [4.3.14] - 2023-07-17
+
+### Features
+
+- `ArgAction::HelpShort` and `ArgAction::HelpLong` for explicitly specifying which style of help to display
+
+### Fixes
+
+- Skip `[OPTIONS]` in usage if a help or version `ArgAction` is used
+
+## [4.3.13] - 2023-07-17
+
+## [4.3.12] - 2023-07-14
+
+### Fixes
+
+- *(derive)* Don't error on enum variant field attributes
+
+## [4.3.11] - 2023-07-05
+
+### Features
+
+- *(derive)* Support fields wrapped in `num::Wrapping`, `Box`, or `Arc`
+- *(derive)* Support `Box<str>`, `Box<OsStr>`, and `Box<Path>`
+
+## [4.3.10] - 2023-06-30
+
+### Performance
+
+- Drop a dependency, reducing binary size by 1.3 KiB
+
+## [4.3.9] - 2023-06-28
+
+### Fixes
+
+- `Command::ignore_errors` no longer masks help/version
+
+## [4.3.8] - 2023-06-23
+
+### Fixes
+
+- Error on ambiguity with `infer_long_arg`, rather than arbitrarily picking one, matching the documentation and subcommand's behavior
+
+## [4.3.7] - 2023-06-23
+
+### Documentation
+
+- Further clarify magic behavior in derive tutorial
+- Further clarify derive API's relationship to builder within the tutorial
+
+## [4.3.6] - 2023-06-23
+
+### Documentation
+
+- Suggest `clio`
+
+## [4.3.5] - 2023-06-20
+
+- `ColorChoice::possible_values` is added to simplify things for builder users
+
+### Fixes
+
+- `ColorChoice::to_possible_value` no longer includes descriptions, encouraging shorter help where possible
+
+## [4.3.4] - 2023-06-14
+
+### Features
+
+- Add `Error::exit_code`
+
+## [4.3.3] - 2023-06-09
+
+### Features
+
+- `Command::defer` for delayed initialization of subcommands to reduce startup times of large applications like deno
+
+## [4.3.2] - 2023-06-05
+
+### Fixes
+
+- *(derive)* Don't produce `unused_equalifications` warnings when someone brings a clap type into scope
+
+## [4.3.1] - 2023-06-02
+
+### Performance
+
+- *(derive)* Reduce the amount of generated code
 
 ## [4.3.0] - 2023-05-19
 
@@ -4259,7 +4452,37 @@ Minimum version of Rust is now v1.13.0 (Stable)
 * **arg**  allow lifetimes other than 'static in arguments ([9e8c1fb9](https://github.com/clap-rs/clap/commit/9e8c1fb9406f8448873ca58bab07fe905f1551e5))
 
 <!-- next-url -->
-[Unreleased]: https://github.com/clap-rs/clap/compare/v4.3.0...HEAD
+[Unreleased]: https://github.com/clap-rs/clap/compare/v4.4.5...HEAD
+[4.4.5]: https://github.com/clap-rs/clap/compare/v4.4.4...v4.4.5
+[4.4.4]: https://github.com/clap-rs/clap/compare/v4.4.3...v4.4.4
+[4.4.3]: https://github.com/clap-rs/clap/compare/v4.4.2...v4.4.3
+[4.4.2]: https://github.com/clap-rs/clap/compare/v4.4.1...v4.4.2
+[4.4.1]: https://github.com/clap-rs/clap/compare/v4.4.0...v4.4.1
+[4.4.0]: https://github.com/clap-rs/clap/compare/v4.3.24...v4.4.0
+[4.3.24]: https://github.com/clap-rs/clap/compare/v4.3.23...v4.3.24
+[4.3.23]: https://github.com/clap-rs/clap/compare/v4.3.22...v4.3.23
+[4.3.22]: https://github.com/clap-rs/clap/compare/v4.3.21...v4.3.22
+[4.3.21]: https://github.com/clap-rs/clap/compare/v4.3.20...v4.3.21
+[4.3.20]: https://github.com/clap-rs/clap/compare/v4.3.19...v4.3.20
+[4.3.19]: https://github.com/clap-rs/clap/compare/v4.3.18...v4.3.19
+[4.3.18]: https://github.com/clap-rs/clap/compare/v4.3.17...v4.3.18
+[4.3.17]: https://github.com/clap-rs/clap/compare/v4.3.16...v4.3.17
+[4.3.16]: https://github.com/clap-rs/clap/compare/v4.3.15...v4.3.16
+[4.3.15]: https://github.com/clap-rs/clap/compare/v4.3.14...v4.3.15
+[4.3.14]: https://github.com/clap-rs/clap/compare/v4.3.13...v4.3.14
+[4.3.13]: https://github.com/clap-rs/clap/compare/v4.3.12...v4.3.13
+[4.3.12]: https://github.com/clap-rs/clap/compare/v4.3.11...v4.3.12
+[4.3.11]: https://github.com/clap-rs/clap/compare/v4.3.10...v4.3.11
+[4.3.10]: https://github.com/clap-rs/clap/compare/v4.3.9...v4.3.10
+[4.3.9]: https://github.com/clap-rs/clap/compare/v4.3.8...v4.3.9
+[4.3.8]: https://github.com/clap-rs/clap/compare/v4.3.7...v4.3.8
+[4.3.7]: https://github.com/clap-rs/clap/compare/v4.3.6...v4.3.7
+[4.3.6]: https://github.com/clap-rs/clap/compare/v4.3.5...v4.3.6
+[4.3.5]: https://github.com/clap-rs/clap/compare/v4.3.4...v4.3.5
+[4.3.4]: https://github.com/clap-rs/clap/compare/v4.3.3...v4.3.4
+[4.3.3]: https://github.com/clap-rs/clap/compare/v4.3.2...v4.3.3
+[4.3.2]: https://github.com/clap-rs/clap/compare/v4.3.1...v4.3.2
+[4.3.1]: https://github.com/clap-rs/clap/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/clap-rs/clap/compare/v4.2.7...v4.3.0
 [4.2.7]: https://github.com/clap-rs/clap/compare/v4.2.6...v4.2.7
 [4.2.6]: https://github.com/clap-rs/clap/compare/v4.2.5...v4.2.6

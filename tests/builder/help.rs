@@ -441,7 +441,7 @@ Options:
 }
 
 #[test]
-#[cfg(all(feature = "wrap_help"))]
+#[cfg(feature = "wrap_help")]
 fn possible_value_wrapped_help() {
     static WRAPPED_HELP: &str = "\
 Usage: test [OPTIONS]
@@ -449,13 +449,15 @@ Usage: test [OPTIONS]
 Options:
       --possible-values <possible_values>
           Possible values:
-          - short_name: Long enough help message, barely warrant wrapping
+          - short_name: Long enough help message, barely warrant
+            wrapping
           - second:     Short help gets handled the same
 
       --possible-values-with-new-line <possible_values_with_new_line>
           Possible values:
-          - long enough name to trigger new line: Really long enough help message to clearly warrant
-            wrapping believe me
+          - long enough name to trigger new line: Really long
+            enough help message to clearly warrant wrapping believe
+            me
           - second
 
       --possible-values-without-new-line <possible_values_without_new_line>
@@ -916,6 +918,7 @@ fn old_newline_variables() {
 #[test]
 #[cfg(feature = "wrap_help")]
 fn issue_688_hide_pos_vals() {
+    #[cfg(not(feature = "unstable-v5"))]
     static ISSUE_688: &str = "\
 Usage: ctest [OPTIONS]
 
@@ -923,6 +926,18 @@ Options:
       --filter <filter>  Sets the filter, or sampling method, to use for interpolation when resizing the particle
                          images. The default is Linear (Bilinear). [possible values: Nearest, Linear, Cubic, Gaussian,
                          Lanczos3]
+  -h, --help             Print help
+  -V, --version          Print version
+";
+
+    #[cfg(feature = "unstable-v5")]
+    static ISSUE_688: &str = "\
+Usage: ctest [OPTIONS]
+
+Options:
+      --filter <filter>  Sets the filter, or sampling method, to use for interpolation when resizing
+                         the particle images. The default is Linear (Bilinear). [possible values:
+                         Nearest, Linear, Cubic, Gaussian, Lanczos3]
   -h, --help             Print help
   -V, --version          Print version
 ";
@@ -1047,6 +1062,65 @@ Options:
             "something really really long, with\nmultiple lines of text\nthat should be displayed",
         )
         .arg(Arg::new("arg1").help("some option"));
+    utils::assert_output(cmd, "myapp --help", LONG_ABOUT, false);
+}
+
+#[test]
+fn explicit_short_long_help() {
+    static SHORT_ABOUT: &str = "\
+bar
+
+Usage: myapp [arg1]
+
+Arguments:
+  [arg1]  some option
+
+Options:
+  -?             
+  -h, --help     
+  -V, --version  Print version
+";
+
+    static LONG_ABOUT: &str = "\
+something really really long, with
+multiple lines of text
+that should be displayed
+
+Usage: myapp [arg1]
+
+Arguments:
+  [arg1]
+          some option
+
+Options:
+  -?
+          
+
+  -h, --help
+          
+
+  -V, --version
+          Print version
+";
+
+    let cmd = Command::new("myapp")
+        .disable_help_flag(true)
+        .version("1.0")
+        .author("foo")
+        .about("bar")
+        .long_about(
+            "something really really long, with\nmultiple lines of text\nthat should be displayed",
+        )
+        .arg(Arg::new("arg1").help("some option"))
+        .arg(Arg::new("short").short('?').action(ArgAction::HelpShort))
+        .arg(
+            Arg::new("long")
+                .short('h')
+                .long("help")
+                .action(ArgAction::HelpLong),
+        );
+    utils::assert_output(cmd.clone(), "myapp -?", SHORT_ABOUT, false);
+    utils::assert_output(cmd.clone(), "myapp -h", LONG_ABOUT, false);
     utils::assert_output(cmd, "myapp --help", LONG_ABOUT, false);
 }
 
@@ -1259,6 +1333,23 @@ Options:
     utils::assert_output(cmd, "ctest --help", ISSUE_777, false);
 }
 
+#[test]
+fn dont_strip_padding_issue_5083() {
+    let cmd = Command::new("test")
+        .help_template("{subcommands}")
+        .subcommands([
+            Command::new("one"),
+            Command::new("two"),
+            Command::new("three"),
+        ]);
+    static EXPECTED: &str = "  one    
+  two    
+  three  
+  help   Print this message or the help of the given subcommand(s)
+";
+    utils::assert_output(cmd, "test --help", EXPECTED, false);
+}
+
 static OVERRIDE_HELP_SHORT: &str = "\
 Usage: test
 
@@ -1279,7 +1370,7 @@ fn override_help_short() {
 }
 
 static OVERRIDE_HELP_LONG: &str = "\
-Usage: test [OPTIONS]
+Usage: test
 
 Options:
   -h, --hell     Print help
@@ -1511,12 +1602,24 @@ fn hide_default_val() {
 #[test]
 #[cfg(feature = "wrap_help")]
 fn escaped_whitespace_values() {
+    #[cfg(not(feature = "unstable-v5"))]
     static ESCAPED_DEFAULT_VAL: &str = "\
 Usage: default [OPTIONS]
 
 Options:
       --arg <argument>  Pass an argument to the program. [default: \"\\n\"] [possible values: normal, \" \", \"\\n\", \"\\t\",
                         other]
+  -h, --help            Print help
+  -V, --version         Print version
+";
+
+    #[cfg(feature = "unstable-v5")]
+    static ESCAPED_DEFAULT_VAL: &str = "\
+Usage: default [OPTIONS]
+
+Options:
+      --arg <argument>  Pass an argument to the program. [default: \"\\n\"] [possible values: normal, \"
+                        \", \"\\n\", \"\\t\", other]
   -h, --help            Print help
   -V, --version         Print version
 ";

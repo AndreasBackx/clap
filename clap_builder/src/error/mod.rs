@@ -214,21 +214,26 @@ impl<F: ErrorFormatter> Error<F> {
         }
     }
 
+    /// Returns the exit code that `.exit` will exit the process with.
+    ///
+    /// When the error's kind would print to `stderr` this returns `2`,
+    /// else it returns `0`.
+    pub fn exit_code(&self) -> i32 {
+        if self.use_stderr() {
+            USAGE_CODE
+        } else {
+            SUCCESS_CODE
+        }
+    }
+
     /// Prints the error and exits.
     ///
     /// Depending on the error kind, this either prints to `stderr` and exits with a status of `2`
     /// or prints to `stdout` and exits with a status of `0`.
     pub fn exit(&self) -> ! {
-        if self.use_stderr() {
-            // Swallow broken pipe errors
-            let _ = self.print();
-
-            safe_exit(USAGE_CODE);
-        }
-
         // Swallow broken pipe errors
         let _ = self.print();
-        safe_exit(SUCCESS_CODE)
+        safe_exit(self.exit_code())
     }
 
     /// Prints formatted and colored error to `stdout` or `stderr` according to its error kind
@@ -441,6 +446,7 @@ impl<F: ErrorFormatter> Error<F> {
         subcmd: String,
         did_you_mean: Vec<String>,
         name: String,
+        suggested_trailing_arg: bool,
         usage: Option<StyledStr>,
     ) -> Self {
         use std::fmt::Write as _;
@@ -451,15 +457,19 @@ impl<F: ErrorFormatter> Error<F> {
 
         #[cfg(feature = "error-context")]
         {
-            let mut styled_suggestion = StyledStr::new();
-            let _ = write!(
-                styled_suggestion,
-                "to pass '{}{subcmd}{}' as a value, use '{}{name} -- {subcmd}{}'",
-                invalid.render(),
-                invalid.render_reset(),
-                valid.render(),
-                valid.render_reset()
-            );
+            let mut suggestions = vec![];
+            if suggested_trailing_arg {
+                let mut styled_suggestion = StyledStr::new();
+                let _ = write!(
+                    styled_suggestion,
+                    "to pass '{}{subcmd}{}' as a value, use '{}{name} -- {subcmd}{}'",
+                    invalid.render(),
+                    invalid.render_reset(),
+                    valid.render(),
+                    valid.render_reset()
+                );
+                suggestions.push(styled_suggestion);
+            }
 
             err = err.extend_context_unchecked([
                 (ContextKind::InvalidSubcommand, ContextValue::String(subcmd)),
@@ -469,7 +479,7 @@ impl<F: ErrorFormatter> Error<F> {
                 ),
                 (
                     ContextKind::Suggested,
-                    ContextValue::StyledStrs(vec![styled_suggestion]),
+                    ContextValue::StyledStrs(suggestions),
                 ),
             ]);
             if let Some(usage) = usage {
@@ -708,7 +718,7 @@ impl<F: ErrorFormatter> Error<F> {
                     let mut styled_suggestion = StyledStr::new();
                     let _ = write!(
                         styled_suggestion,
-                        "'{}{sub} --{flag}{}' exists",
+                        "'{}{sub} {flag}{}' exists",
                         valid.render(),
                         valid.render_reset()
                     );
@@ -717,7 +727,7 @@ impl<F: ErrorFormatter> Error<F> {
                 Some((flag, None)) => {
                     err = err.insert_context_unchecked(
                         ContextKind::SuggestedArg,
-                        ContextValue::String(format!("--{flag}")),
+                        ContextValue::String(flag),
                     );
                 }
                 None => {}

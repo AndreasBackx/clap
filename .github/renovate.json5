@@ -1,16 +1,19 @@
 {
   schedule: [
-    'before 3am on the first day of the month',
+    'before 5am on the first day of the month',
   ],
   semanticCommits: 'enabled',
   configMigration: true,
   dependencyDashboard: true,
-  regexManagers: [
+  customManagers: [
     {
+      customType: 'regex',
       fileMatch: [
         '^rust-toolchain\\.toml$',
         'Cargo.toml$',
         'clippy.toml$',
+        '^Makefile$',
+        '^tests/derive_ui.rs$',
         '\\.clippy.toml$',
         '^\\.github/workflows/ci.yml$',
         '^\\.github/workflows/rust-next.yml$',
@@ -33,8 +36,12 @@
       matchPackageNames: [
         'rust',
       ],
-      minimumReleaseAge: "252 days",  // 6 releases * 6 weeks per release * 7 days per week
-      internalChecksFilter: "strict",
+      minimumReleaseAge: '252 days',  // 6 releases * 6 weeks per release * 7 days per week
+      internalChecksFilter: 'strict',
+      extractVersion: '^(?<version>\\d+\\.\\d+)',  // Drop the patch version
+      schedule: [
+        '* * * * *',
+      ],
     },
     // Goals:
     // - Keep version reqs low, ignoring compatible normal/build dependencies

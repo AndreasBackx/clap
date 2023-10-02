@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [4.4.2] - 2023-09-25
+
+### Fixes
+
+- *(unstable)* Complete positionals in subcommands
+
+## [4.4.1] - 2023-09-07
+
+### Fixes
+
+- *(fish)* Properly escape `()` in descriptions
+
+## [4.4.0] - 2023-08-24
+
+### Compatibility
+
+- Update MSRV to 1.70.0
+
+### Features
+
+- *(unstable)* Fish dynamic completion support
+
+### Fixes
+
+- *(unstable)* Manual control over sort order
+- *(unstable)* Don't recursively report subcommands
+- *(unstable)* Get bash support working again
+- *(unstable)* Ensure shorts keep their leading `-`
+
+## [4.3.2] - 2023-07-05
+
+### Fixes
+
+- *(powershell)* Attempt to allow completing `-s` separately from `-S`
+
+## [4.3.1] - 2023-06-02
+
 ## [4.3.0] - 2023-05-19
 
 ## [4.2.3] - 2023-05-12
@@ -145,7 +182,12 @@ MSRV changed to 1.64.0
 ## [3.0.1] - 2022-01-03
 
 <!-- next-url -->
-[Unreleased]: https://github.com/clap-rs/clap/compare/clap_complete-v4.3.0...HEAD
+[Unreleased]: https://github.com/clap-rs/clap/compare/clap_complete-v4.4.2...HEAD
+[4.4.2]: https://github.com/clap-rs/clap/compare/clap_complete-v4.4.1...clap_complete-v4.4.2
+[4.4.1]: https://github.com/clap-rs/clap/compare/clap_complete-v4.4.0...clap_complete-v4.4.1
+[4.4.0]: https://github.com/clap-rs/clap/compare/clap_complete-v4.3.2...clap_complete-v4.4.0
+[4.3.2]: https://github.com/clap-rs/clap/compare/clap_complete-v4.3.1...clap_complete-v4.3.2
+[4.3.1]: https://github.com/clap-rs/clap/compare/clap_complete-v4.3.0...clap_complete-v4.3.1
 [4.3.0]: https://github.com/clap-rs/clap/compare/clap_complete-v4.2.3...clap_complete-v4.3.0
 [4.2.3]: https://github.com/clap-rs/clap/compare/clap_complete-v4.2.2...clap_complete-v4.2.3
 [4.2.2]: https://github.com/clap-rs/clap/compare/clap_complete-v4.2.1...clap_complete-v4.2.2
