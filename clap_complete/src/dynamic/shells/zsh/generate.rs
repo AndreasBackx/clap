@@ -4,12 +4,12 @@ use unicode_xid::UnicodeXID;
 #[derive(clap::Args)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug)]
-pub struct BashGenerateArgs {
+pub struct ZshGenerateArgs {
     #[arg(long)]
     behavior: Behavior,
 }
 
-impl Registrar for BashGenerateArgs {
+impl Registrar for ZshGenerateArgs {
     fn file_name(&self, name: &str) -> String {
         format!("{name}.bash")
     }
@@ -26,20 +26,24 @@ impl Registrar for BashGenerateArgs {
             escaped_name.chars().all(|c| c.is_xid_continue()),
             "`name` must be an identifier, got `{escaped_name}`"
         );
+        let mut upper_name = escaped_name.clone();
+        upper_name.make_ascii_uppercase();
 
-        let options = match &self.behavior {
-            Behavior::Minimal => "-o nospace -o bashdefault",
-            Behavior::Readline => "-o nospace -o default -o bashdefault",
-            Behavior::Custom(c) => c.as_str(),
-        };
+        // This allows you to specify multiple executables where this autocomplete
+        // needs to be applied. Can potentially be expanded and generalised.
+        let executables = vec![bin]
+            .into_iter()
+            .map(|s| shlex::try_quote(s.as_ref()).unwrap().into_owned())
+            .collect::<Vec<_>>()
+            .join(" ");
 
         let completer = shlex::try_quote(completer).unwrap();
 
-        let script = include_str!("template.bash")
+        let script = include_str!("template.zsh")
             .replace("NAME", &escaped_name)
-            .replace("EXECUTABLE", &bin)
-            .replace("OPTIONS", &options)
-            .replace("COMPLETER", &completer);
+            .replace("EXECUTABLE", &executables)
+            .replace("COMPLETER", &completer)
+            .replace("UPPER", &upper_name);
 
         writeln!(buf, "{script}")?;
         Ok(())

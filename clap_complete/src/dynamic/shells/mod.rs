@@ -2,6 +2,7 @@
 
 mod bash;
 mod fish;
+mod zsh;
 
 use std::io::Write as _;
 
@@ -10,13 +11,12 @@ use crate::dynamic::Registrar;
 /// A subcommand definition to `flatten` into your CLI
 ///
 /// This provides a one-stop solution for integrating completions into your CLI
-#[derive(clap::Subcommand)]
 #[allow(missing_docs)]
-#[derive(Clone, Debug)]
+#[derive(clap::Subcommand, Clone, Debug)]
 #[command(about = None, long_about = None)]
 pub enum CompleteCommand {
     /// Register shell completions for this program
-    #[command(hide = true)]
+    // #[command(hide = true)]
     Complete(CompleteArgs),
     /// Generate shell completions for this program
     Generate(GenerateArgs),
@@ -29,12 +29,28 @@ pub struct CompleteArgs {
     command: CompleteShellCommands,
 }
 
-#[derive(clap::Subcommand)]
 #[allow(missing_docs)]
-#[derive(Clone, Debug)]
+#[derive(clap::Subcommand, Clone, Debug)]
 pub enum CompleteShellCommands {
     Bash(bash::complete::BashCompleteArgs),
     Fish(fish::complete::FishCompleteArgs),
+}
+
+#[allow(missing_docs)]
+#[derive(clap::Args, Clone, Debug)]
+pub struct GenerateArgs {
+    #[command(subcommand)]
+    command: GenerateShellCommands,
+
+    #[arg(long, short('O'), default_value = "-")]
+    output: std::path::PathBuf,
+
+    /// For testing, override the binary that will be called for in the
+    /// completion script.
+    ///
+    /// Set it to the build output of the binary for testing.
+    #[arg(long)]
+    binary: Option<std::path::PathBuf>,
 }
 
 #[derive(clap::Subcommand)]
@@ -45,19 +61,18 @@ pub enum GenerateShellCommands {
     Fish(fish::generate::FishGenerateArgs),
 }
 
-/// Generally used via [`CompleteCommand`]
-#[derive(clap::Args)]
-#[allow(missing_docs)]
-#[derive(Clone, Debug)]
-#[command(about = None, long_about = None)]
-pub struct CompleteArgs {
-    /// Specify shell to complete for
-    #[arg(long)]
-    shell: Shell,
+// /// Generally used via [`CompleteCommand`]
+// #[allow(missing_docs)]
+// #[derive(clap::Args)]
+// #[command(about = None, long_about = None)]
+// pub struct CompleteArgs {
+//     /// Specify shell to complete for
+//     #[arg(long)]
+//     shell: Shell,
 
-    #[command(subcommand)]
-    command: GenerateShellCommands,
-}
+//     #[command(subcommand)]
+//     command: GenerateShellCommands,
+// }
 
 impl CompleteCommand {
     /// Process the completion request
@@ -78,6 +93,12 @@ impl CompleteCommand {
                 let mut buf = Vec::new();
                 let name = cmd.get_name();
                 let bin = cmd.get_bin_name().unwrap_or_else(|| cmd.get_name());
+                let completer: String = args
+                    .binary
+                    .clone()
+                    .map(|pathbuf| pathbuf.into_os_string().into_string().ok())
+                    .flatten()
+                    .unwrap_or_else(|| bin.into());
 
                 if args.output.is_dir() {
                     return Err(clap::error::Error::raw(
@@ -88,11 +109,11 @@ impl CompleteCommand {
 
                 match args.command {
                     GenerateShellCommands::Bash(ref args) => {
-                        // TODO Figure out what to pass for complter, just assuming bin now.
-                        args.write_registration(name, bin, bin, &mut buf)?
+                        // TODO Figure out what to pass for completer, just assuming bin now.
+                        args.write_registration(name, bin, &completer, &mut buf)?
                     }
                     GenerateShellCommands::Fish(ref args) => {
-                        args.write_registration(name, bin, bin, &mut buf)?
+                        args.write_registration(name, bin, &completer, &mut buf)?
                     }
                 }
 

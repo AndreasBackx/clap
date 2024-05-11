@@ -19,9 +19,9 @@ fn command() -> clap::Command {
     clap_complete::dynamic::shells::CompleteCommand::augment_subcommands(cmd)
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cmd = command();
-    let matches = cmd.get_matches();
+    let matches = cmd.try_get_matches()?;
     if let Ok(completions) =
         clap_complete::dynamic::shells::CompleteCommand::from_arg_matches(&matches)
     {
@@ -29,6 +29,7 @@ fn main() {
     } else {
         println!("{matches:#?}");
     }
+    Ok(())
 }
 
 #[test]

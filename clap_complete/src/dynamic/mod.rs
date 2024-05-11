@@ -3,6 +3,7 @@
 //! For quick-start, see [`shells::CompleteCommand`]
 
 mod complete;
+mod completion;
 mod registrar;
 
 pub mod shells;

@@ -7,33 +7,23 @@ use std::io::Write;
 #[derive(clap::Args)]
 #[allow(missing_docs)]
 #[derive(Clone, Debug)]
-pub struct BashCompleteArgs {
+pub struct ZshCompleteArgs {
     #[arg(
         long,
         required = true,
-        value_name = "COMP_CWORD",
+        value_name = "CURRENT-1",
         hide_short_help = true
     )]
     index: Option<usize>,
 
-    #[arg(long = "type", required = true, hide_short_help = true)]
-    comp_type: Option<CompType>,
-
-    #[arg(long, hide_short_help = true)]
-    space: bool,
-
-    #[arg(long, conflicts_with = "space", hide_short_help = true)]
-    no_space: bool,
-
-    #[arg(raw = true, hide_short_help = true)]
-    comp_words: Vec<OsString>,
+    #[arg(raw = true, hide_short_help = true, value_name = "words")]
+    words: Vec<OsString>,
 }
 
-impl BashCompleteArgs {
+impl ZshCompleteArgs {
     /// Process the completion request
     pub fn try_complete(&self, cmd: &mut clap::Command) -> clap::error::Result<()> {
         let index = self.index.unwrap_or_default();
-        let _comp_type = self.comp_type.unwrap_or_default();
         // let _space = match (self.space, self.no_space) {
         //     (true, false) => Some(true),
         //     (false, true) => Some(false),
@@ -44,11 +34,26 @@ impl BashCompleteArgs {
         // }
         // .unwrap();
         let current_dir = std::env::current_dir().ok();
-        let completions = complete(cmd, self.comp_words.clone(), index, current_dir.as_deref())?;
+        let completions = complete(cmd, self.words.clone(), index, current_dir.as_deref())?;
 
         let mut buf = Vec::new();
-        for (suggestion, _) in completions.iter() {
-            writeln!(&mut buf, "{}", suggestion.to_string_lossy())?;
+        for group in completions.iter() {
+            writeln!(&mut buf, "{}", group.name.clone().unwrap_or_default())?;
+
+            for completion in group.completions.iter() {
+                writeln!(&mut buf, "{}", completion.value)?;
+                writeln!(
+                    &mut buf,
+                    "{}{}",
+                    completion.display,
+                    completion
+                        .help
+                        .as_ref()
+                        .map(|help| format!("\t--- {help}"))
+                        .unwrap_or_default()
+                )?;
+            }
+            writeln!(&mut buf, "")?;
         }
         std::io::stdout().write_all(&buf)?;
 

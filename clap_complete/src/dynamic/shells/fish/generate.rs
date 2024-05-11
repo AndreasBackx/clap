@@ -17,11 +17,16 @@ impl Registrar for FishGenerateArgs {
         completer: &str,
         buf: &mut dyn std::io::Write,
     ) -> Result<(), std::io::Error> {
-        let bin = shlex::quote(bin);
-        let completer = shlex::quote(completer);
-        writeln!(
-            buf,
-            r#"complete -x -c {bin} -a "("'{completer}'" complete fish -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))""#
-        )
+        let bin = shlex::try_quote(bin).unwrap();
+        let completer = shlex::try_quote(completer).unwrap();
+
+        let script = include_str!("template.fish")
+            .replace("NAME", &escaped_name)
+            .replace("EXECUTABLE", &bin)
+            .replace("OPTIONS", &options)
+            .replace("COMPLETER", &completer);
+        writeln!(buf, "{script}")?;
+
+        Ok(())
     }
 }

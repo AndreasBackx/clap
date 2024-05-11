@@ -1,8 +1,11 @@
 use std::ffi::OsStr;
 use std::ffi::OsString;
+use std::vec;
 
 use clap::builder::StyledStr;
 use clap_lex::OsStrExt as _;
+
+use super::completion::{Completion, CompletionGroup, Completions};
 
 /// Complete the command specified
 pub fn complete(
@@ -10,7 +13,23 @@ pub fn complete(
     args: Vec<std::ffi::OsString>,
     arg_index: usize,
     current_dir: Option<&std::path::Path>,
-) -> Result<Vec<(std::ffi::OsString, Option<StyledStr>)>, std::io::Error> {
+) -> Result<Completions, std::io::Error> {
+    return Ok(vec![CompletionGroup {
+        name: Some("Group 1".into()),
+        completions: vec![
+            Completion {
+                value: "a".into(),
+                display: "AAA".into(),
+                help: None,
+            },
+            Completion {
+                value: "b".into(),
+                display: "BBB".into(),
+                help: None,
+            },
+        ],
+    }]);
+
     cmd.build();
 
     let raw_args = clap_lex::RawArgs::new(args);
